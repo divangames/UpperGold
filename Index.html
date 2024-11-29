@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Benzin:wght@400;700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Динозаврик</title>
@@ -8,7 +9,7 @@
         /* Стили для игры */
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Benzin', Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -34,8 +35,8 @@
         const ctx = canvas.getContext('2d');
 
         // Константы игры
-        const GRAVITY = 0.2; // Гравитация для прыжка
-        const JUMP_STRENGTH = -12; // Сила прыжка
+        const GRAVITY = 0.3; // Гравитация для прыжка
+        const JUMP_STRENGTH = -15; // Сила прыжка
         const OBSTACLE_SPEED = 1; // Скорость движения препятствий
 
         // Переменные игры
@@ -106,10 +107,10 @@
         function checkCollisions() {
             for (const obstacle of obstacles) {
                 if (
-                    dino.x < obstacle.x + obstacle.width &&
-                    dino.x + dino.width > obstacle.x &&
-                    dino.y < obstacle.y + obstacle.height &&
-                    dino.y + dino.height > obstacle.y
+                    dino.x < obstacle.x + obstacle.width - 5 &&
+                    dino.x + dino.width > obstacle.x + 5 &&
+                    dino.y < obstacle.y + obstacle.height - 5 &&
+                    dino.y + dino.height > obstacle.y + 5
                 ) {
                     gameOver = true;
                 }
