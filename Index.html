@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="https://fonts.googleapis.com/css2?family=Benzin:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Динозаврик</title>
     <style>
-        /* Стили для игры */
         body {
             margin: 0;
-            font-family: 'Benzin', Arial, sans-serif;
+            font-family: 'Comfortaa', Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -19,31 +18,35 @@
         }
 
         canvas {
-    border: 1px solid #ccc;
-    background-color: #fff;
-    width: 1600px;
-    height: 400px;
-}
+            border: 1px solid #ccc;
+            background-color: #fff;
+            width: 1600px;
+            height: 400px;
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas" width="1600" height="400"></canvas>
 
     <script>
-        // Получение канваса и контекста рисования
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Константы игры
-        const GRAVITY = 0.3; // Гравитация для прыжка
-        const JUMP_STRENGTH = -15; // Сила прыжка
-        const OBSTACLE_SPEED = 1; // Скорость движения препятствий
+        const GRAVITY = 0.3;
+        const JUMP_STRENGTH = -15;
+        const OBSTACLE_SPEED = 1;
 
-        // Переменные игры
-        let gameOver = false; // Флаг конца игры
-        let score = 0; // Очки
+        let gameOver = false;
+        let gameStarted = false;
+        let score = 0;
+        let timeElapsed = 0;
+        let startTime = null;
 
-        // Динозавр
+        const startAudio = new Audio('audio/game-start.wav');
+        const jumpAudio = new Audio('audio/jump.wav');
+		
+
+
         const dino = {
             x: 50,
             y: canvas.height - 50,
@@ -51,15 +54,13 @@
             height: 50,
             color: 'green',
             dy: 0,
-            isJumping: false // Флаг для прыжка
+            isJumping: false
         };
 
-        // Препятствия
         const obstacles = [];
 
-        // Функция для создания нового препятствия
         function createObstacle() {
-            const height = Math.random() * 50 + 20; // Случайная высота препятствия
+            const height = Math.random() * 50 + 20;
             const obstacle = {
                 x: canvas.width,
                 y: canvas.height - height,
@@ -70,13 +71,11 @@
             obstacles.push(obstacle);
         }
 
-        // Функция обновления динозавра
         function updateDino() {
             if (dino.isJumping) {
-                dino.dy += GRAVITY; // Применение гравитации
-                dino.y += dino.dy; // Изменение положения по оси Y
+                dino.dy += GRAVITY;
+                dino.y += dino.dy;
 
-                // Ограничение на нижний край
                 if (dino.y >= canvas.height - dino.height) {
                     dino.y = canvas.height - dino.height;
                     dino.isJumping = false;
@@ -85,25 +84,21 @@
             }
         }
 
-        // Функция обновления препятствий
         function updateObstacles() {
             for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].x -= OBSTACLE_SPEED; // Движение препятствия влево
+                obstacles[i].x -= OBSTACLE_SPEED;
 
-                // Удаление препятствий за экраном
                 if (obstacles[i].x + obstacles[i].width < 0) {
                     obstacles.splice(i, 1);
-                    score += Math.floor(obstacles[i].height / 10); // Увеличение очков
+                    score += 1;
                 }
             }
 
-            // Генерация нового препятствия
             if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < canvas.width - 400) {
                 createObstacle();
             }
         }
 
-        // Функция проверки столкновений
         function checkCollisions() {
             for (const obstacle of obstacles) {
                 if (
@@ -117,13 +112,11 @@
             }
         }
 
-        // Функция отрисовки динозавра
         function drawDino() {
             ctx.fillStyle = dino.color;
             ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
         }
 
-        // Функция отрисовки препятствий
         function drawObstacles() {
             for (const obstacle of obstacles) {
                 ctx.fillStyle = obstacle.color;
@@ -131,56 +124,101 @@
             }
         }
 
-        // Функция отрисовки счета
-        function drawScore() {
+function drawScore() {
+    ctx.fillStyle = 'black';
+    ctx.font = '20px Comfortaa';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Очки: ${Math.floor(score)}`, 10, 30);
+}
+
+
+        function drawTimeElapsed() {
             ctx.fillStyle = 'black';
-            ctx.font = '20px Arial';
-            ctx.fillText(`Очки: ${score}`, 10, 20);
+            ctx.font = '20px Comfortaa';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Время: ${timeElapsed} сек`, 10, 60);
         }
 
-        // Главный игровой цикл
+        function drawStartScreen() {
+            ctx.fillStyle = 'black';
+            ctx.font = '30px Comfortaa';
+            ctx.textAlign = 'center';
+            ctx.fillText('Добро пожаловать в игру Динозаврик!', canvas.width / 2, canvas.height / 2 - 20);
+            ctx.fillText('Нажмите Пробел, чтобы начать.', canvas.width / 2, canvas.height / 2 + 20);
+        }
+
+        function drawGameOverScreen() {
+            ctx.fillStyle = 'black';
+            ctx.font = '30px Comfortaa';
+            ctx.textAlign = 'center';
+            ctx.fillText('Игра окончена!', canvas.width / 2, canvas.height / 2 - 60);
+            ctx.fillText(`Ваши очки: ${score}`, canvas.width / 2, canvas.height / 2 - 20);
+            ctx.fillText(`Время игры: ${timeElapsed} сек`, canvas.width / 2, canvas.height / 2 + 20);
+            ctx.fillText('Нажмите Пробел, чтобы начать заново.', canvas.width / 2, canvas.height / 2 + 60);
+        }
+
         function gameLoop() {
-            if (gameOver) {
-                ctx.fillStyle = 'black';
-                ctx.font = '30px Arial';
-                ctx.fillText('Игра окончена! Нажмите Пробел, чтобы начать заново.', 50, canvas.height / 2);
+            if (!gameStarted) {
+                drawStartScreen();
                 return;
             }
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Очистка экрана
+            if (gameOver) {
+                drawGameOverScreen();
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             updateDino();
             updateObstacles();
             checkCollisions();
 
+            if (startTime) {
+                timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+                score += 1 / 60; // Добавляем очки за время
+            }
+
             drawDino();
             drawObstacles();
             drawScore();
+            drawTimeElapsed();
 
-            requestAnimationFrame(gameLoop); // Повтор вызова цикла
+            requestAnimationFrame(gameLoop);
         }
 
-        // Событие для прыжка
         document.addEventListener('keydown', (e) => {
-            if (e.key === ' ' && !dino.isJumping) {
-                dino.isJumping = true;
-                dino.dy = JUMP_STRENGTH; // Применение силы прыжка
-            }
-            if (e.key === ' ' && gameOver) {
-                // Перезапуск игры
+            if (e.key === ' ' && !gameStarted) {
+                gameStarted = true;
+                startTime = Date.now();
                 gameOver = false;
                 score = 0;
                 obstacles.length = 0;
                 dino.y = canvas.height - dino.height;
                 dino.isJumping = false;
                 dino.dy = 0;
-                const audio = new Audio('audio/game-start.wav');
-audio.play();
-gameLoop();
+                startAudio.play();
+                gameLoop();
+            } else if (e.key === ' ' && !gameOver) {
+                if (!dino.isJumping) {
+                    dino.isJumping = true;
+                    dino.dy = JUMP_STRENGTH;
+                    jumpAudio.play();
+                }
+            } else if (e.key === ' ' && gameOver) {
+                gameStarted = true;
+                startTime = Date.now();
+                gameOver = false;
+                score = 0;
+                obstacles.length = 0;
+                dino.y = canvas.height - dino.height;
+                dino.isJumping = false;
+                dino.dy = 0;
+                startAudio.play();
+                gameLoop();
             }
         });
 
-        // Запуск игры
         gameLoop();
     </script>
 </body>
